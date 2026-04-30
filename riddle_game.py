@@ -6,47 +6,37 @@ genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
 client = genai.GenerativeModel('gemini-2.5-flash')
 
 # --- 2. SETUP SESSION STATE (The Brain) ---
+# Add 'language' to the session state
+if 'language' not in st.session_state:
+    st.session_state.language = None
 if 'streak' not in st.session_state:
     st.session_state.streak = 0
-if 'high_score' not in st.session_state:
-    st.session_state.high_score = 0
-if 'current_riddle' not in st.session_state:
-    st.session_state.current_riddle = ""
-if 'real_answer' not in st.session_state:
-    st.session_state.real_answer = ""
-if 'lives' not in st.session_state:
-    st.session_state.lives = 3
-if 'hint' not in st.session_state:
-    st.session_state.hint = ""
+# ... (keep your other session_state lines here)
 
-# --- 3. UI DESIGN & SIDEBAR ---
-st.set_page_config(page_title="AI Riddle Master", page_icon="🧩")
+# --- 3. LANGUAGE SELECTOR INTERFACE ---
+if st.session_state.language is None:
+    st.title("🌐 Welcome to Riddle Master")
+    st.subheader("Please choose your language to begin:")
+    
+    col1, col2, col3 = st.columns(3)
+    
+    if col1.button("🇺🇸 English"):
+        st.session_state.language = "English"
+        st.rerun()
+    if col2.button("🇪🇸 Español"):
+        st.session_state.language = "Spanish"
+        st.rerun()
+    if col3.button("🇮🇳 हिन्दी"):
+        st.session_state.language = "Hindi"
+        st.rerun()
+        
+    st.stop() # This stops the rest of the code from running until a button is clicked
 
-# Sidebar for Settings
-with st.sidebar:
-    st.header("⚙️ Game Settings")
-    difficulty = st.selectbox("Choose Difficulty:", ["Easy", "Medium", "Hard", "Einstein Level"])
-    theme = st.selectbox("Choose Theme:", ["Anything", "Animals", "Science", "Scary/Horror", "Video Games", "Funny"])
-    st.markdown("---")
-    st.write("💡 *Hints cost 2 points!*")
+# --- 4. UPDATE YOUR AI PROMPT ---
+# Now, we tell the AI to use the chosen language!
+# Inside your "Generate a New Riddle" button, change the prompt line to this:
 
-st.title("🧩 The Infinite Riddle Master V2")
-
-# Scoreboard
-col1, col2, col3 = st.columns(3)
-col1.metric("🔥 Streak", st.session_state.streak)
-col2.metric("🏆 High Score", st.session_state.high_score)
-col3.metric("❤️ Lives", "❤️" * st.session_state.lives)
-
-st.divider()
-
-# --- 4. GAME LOOP ---
-
-# Button to Generate Riddle
-if st.button("🎲 Generate a New Riddle"):
-    with st.spinner(f"The AI is crafting a {difficulty} {theme} riddle..."):
-        # I added stricter rules to the prompt
-        prompt = f"Give me a {difficulty} difficulty riddle about {theme}. Do not use any bold text or asterisks. Format EXACTLY like this: \nRIDDLE: [riddle here] \nANSWER: [one word answer]"
+prompt = f"Give me a {difficulty} difficulty riddle about {theme} in {st.session_state.language}. Format EXACTLY like this: \nRIDDLE: [riddle here] \nANSWER: [one word answer]"
         
         try:
             response = client.generate_content(prompt)
