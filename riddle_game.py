@@ -3,14 +3,12 @@ import google.generativeai as genai
 
 # --- 1. SETUP AI ---
 genai.configure(api_key=st.secrets["GEMINI_API_KEY"]) 
-client = genai.GenerativeModel('gemini-2.5-flash')
-
+client = genai.GenerativeModel('gemini-1.5-flash')
 
 # --- 2. SETUP SESSION STATE ---
 if 'language' not in st.session_state:
-    st.session_state.language = None  # Start with no language selected
+    st.session_state.language = None
 
-# Only initialize these IF a language has been chosen
 if st.session_state.language is not None:
     if 'streak' not in st.session_state:
         st.session_state.streak = 0
@@ -25,14 +23,11 @@ if st.session_state.language is not None:
     if 'hint' not in st.session_state:
         st.session_state.hint = ""
 
-
 # --- 3. LANGUAGE SELECTOR INTERFACE ---
 if st.session_state.language is None:
     st.title("🌐 Welcome to Riddle Master")
     st.subheader("Please choose your language to begin:")
-    
     col1, col2, col3 = st.columns(3)
-    
     if col1.button("🇺🇸 English"):
         st.session_state.language = "English"
         st.rerun()
@@ -42,18 +37,34 @@ if st.session_state.language is None:
     if col3.button("🇮🇳 हिन्दी"):
         st.session_state.language = "Hindi"
         st.rerun()
-        
-    st.stop() # This stops the rest of the code from running until a button is clicked
+    st.stop() 
 
-# --- 4. UPDATE YOUR AI PROMPT ---
-# Now, we tell the AI to use the chosen language!
-# Inside your "Generate a New Riddle" button, change the prompt line to this:
+# --- 4. MAIN GAME UI ---
+st.title(f"🧩 Riddle Master ({st.session_state.language})")
 
-prompt = f"Give me a {difficulty} difficulty riddle about {theme} in {st.session_state.language}. Format EXACTLY like this: \nRIDDLE: [riddle here] \nANSWER: [one word answer]"
-        
+# Sidebar for Settings
+with st.sidebar:
+    st.header("⚙️ Settings")
+    difficulty = st.selectbox("Difficulty:", ["Easy", "Medium", "Hard", "Einstein"])
+    theme = st.selectbox("Theme:", ["Anything", "Animals", "Technology", "History", "Funny"])
+    if st.button("🔄 Change Language"):
+        st.session_state.language = None
+        st.rerun()
+
+# Scoreboard
+c1, c2, c3 = st.columns(3)
+c1.metric("🔥 Streak", st.session_state.streak)
+c2.metric("🏆 High Score", st.session_state.high_score)
+c3.metric("❤️ Lives", "❤️" * st.session_state.lives)
+
+st.divider()
+
+# --- 5. GENERATE RIDDLE LOGIC ---
+if st.button("🎲 Generate a New Riddle"):
+    with st.spinner("Crafting..."):
+        prompt = f"Give me a {difficulty} riddle about {theme} in {st.session_state.language}. Format: RIDDLE: [text] ANSWER: [one word]"
         try:
             response = client.generate_content(prompt)
-            # We strip away any sneaky bold formatting just in case
             clean_text = response.text.replace("**", "").replace("Answer:", "ANSWER:").replace("Riddle:", "RIDDLE:")
             text_data = clean_text.split("ANSWER:")
             
@@ -63,54 +74,39 @@ prompt = f"Give me a {difficulty} difficulty riddle about {theme} in {st.session
             st.session_state.hint = "" 
             st.rerun()
         except Exception as e:
-            # If it fails now, it will tell us EXACTLY why!
-            st.error(f"Developer Error: {e}")
-            st.info(f"The AI actually said: {response.text}")
+            st.error(f"Try clicking again! Error: {e}")
 
-
-# Display Riddle & Gameplay
+# --- 6. GAMEPLAY DISPLAY ---
 if st.session_state.current_riddle:
-    st.subheader("The Riddle:")
     st.info(st.session_state.current_riddle)
     
-    # Hint System
-    if st.button("💡 Ask AI for a Hint (Costs 2 Points)"):
+    if st.button("💡 Hint (Costs 2 Points)"):
         if st.session_state.streak >= 2:
-            with st.spinner("AI is thinking of a hint..."):
-                hint_prompt = f"The riddle is: '{st.session_state.current_riddle}' and the answer is '{st.session_state.real_answer}'. Give a short 1-sentence clue without revealing the exact answer."
-                hint_response = client.generate_content(hint_prompt)
-                st.session_state.hint = hint_response.text
-                st.session_state.streak -= 2 # Deduct points
-                st.rerun()
-        else:
-            st.warning("You need at least 2 points to buy a hint!")
+            h_prompt = f"Give a hint for: {st.session_state.current_riddle}. Answer is {st.session_state.real_answer}."
+            st.session_state.hint = client.generate_content(h_prompt).text
+            st.session_state.streak -= 2
+            st.rerun()
             
     if st.session_state.hint:
-        st.warning(f"**HINT:** {st.session_state.hint}")
+        st.warning(st.session_state.hint)
 
-    st.markdown("---")
-    
-    # Guessing System
-    user_guess = st.text_input("Your Answer:")
-    
+    user_guess = st.text_input("Your Answer:", key="guess_input")
     if st.button("Submit Answer"):
-        with st.spinner("The Smart Judge is checking..."):
-            judge_prompt = f"The real answer is '{st.session_state.real_answer}'. The user guessed '{user_guess}'. Are they basically correct? Reply with only YES or NO."
-            judge_response = client.generate_content(judge_prompt).text.strip().upper()
-            
-            if "YES" in judge_response:
-                st.success(f"CORRECT! The answer was: {st.session_state.real_answer}")
-                st.session_state.streak += 10
-                if st.session_state.streak > st.session_state.high_score:
-                    st.session_state.high_score = st.session_state.streak
-                st.session_state.current_riddle = "" 
-                st.button("Next Riddle ➡️")
+        j_prompt = f"Answer: {st.session_state.real_answer}. Guess: {user_guess}. Correct? YES/NO."
+        result = client.generate_content(j_prompt).text.strip().upper()
+        
+        if "YES" in result:
+            st.success(f"Correct! It was {st.session_state.real_answer}")
+            st.session_state.streak += 10
+            if st.session_state.streak > st.session_state.high_score:
+                st.session_state.high_score = st.session_state.streak
+            st.session_state.current_riddle = ""
+            st.rerun()
+        else:
+            st.session_state.lives -= 1
+            if st.session_state.lives <= 0:
+                st.error(f"Game Over! It was {st.session_state.real_answer}")
+                st.session_state.streak = 0
+                st.session_state.current_riddle = ""
             else:
-                st.session_state.lives -= 1
-                if st.session_state.lives > 0:
-                    st.error(f"WRONG! You lost a life. {st.session_state.lives} ❤️ remaining.")
-                else:
-                    st.error(f"GAME OVER! You lost all your lives. The correct answer was: {st.session_state.real_answer}")
-                    st.session_state.streak = 0
-                    st.session_state.current_riddle = ""
-                    st.button("Start Over 🔄")
+                st.error(f"Wrong! {st.session_state.lives} hearts left.")
