@@ -5,13 +5,26 @@ import google.generativeai as genai
 genai.configure(api_key=st.secrets["GEMINI_API_KEY"]) 
 client = genai.GenerativeModel('gemini-2.5-flash')
 
-# --- 2. SETUP SESSION STATE (The Brain) ---
-# Add 'language' to the session state
+
+# --- 2. SETUP SESSION STATE ---
 if 'language' not in st.session_state:
-    st.session_state.language = None
-if 'streak' not in st.session_state:
-    st.session_state.streak = 0
-# ... (keep your other session_state lines here)
+    st.session_state.language = None  # Start with no language selected
+
+# Only initialize these IF a language has been chosen
+if st.session_state.language is not None:
+    if 'streak' not in st.session_state:
+        st.session_state.streak = 0
+    if 'high_score' not in st.session_state:
+        st.session_state.high_score = 0
+    if 'current_riddle' not in st.session_state:
+        st.session_state.current_riddle = ""
+    if 'real_answer' not in st.session_state:
+        st.session_state.real_answer = ""
+    if 'lives' not in st.session_state:
+        st.session_state.lives = 3
+    if 'hint' not in st.session_state:
+        st.session_state.hint = ""
+
 
 # --- 3. LANGUAGE SELECTOR INTERFACE ---
 if st.session_state.language is None:
