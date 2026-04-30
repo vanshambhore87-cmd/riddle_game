@@ -3,7 +3,7 @@ import google.generativeai as genai
 
 # --- 1. SETUP AI ---
 genai.configure(api_key=st.secrets["GEMINI_API_KEY"]) 
-client = genai.GenerativeModel('gemini-1.5-flash-latest')
+client = genai.GenerativeModel('gemini-pro')
 
 # --- 2. SETUP SESSION STATE ---
 if 'language' not in st.session_state:
