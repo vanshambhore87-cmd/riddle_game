@@ -45,18 +45,25 @@ st.divider()
 # Button to Generate Riddle
 if st.button("🎲 Generate a New Riddle"):
     with st.spinner(f"The AI is crafting a {difficulty} {theme} riddle..."):
-        prompt = f"Give me a {difficulty} difficulty riddle about {theme}. Format EXACTLY like this: \nRIDDLE: [riddle here] \nANSWER: [one word answer]"
-        response = client.generate_content(prompt)
+        # I added stricter rules to the prompt
+        prompt = f"Give me a {difficulty} difficulty riddle about {theme}. Do not use any bold text or asterisks. Format EXACTLY like this: \nRIDDLE: [riddle here] \nANSWER: [one word answer]"
         
         try:
-            text_data = response.text.split("ANSWER:")
+            response = client.generate_content(prompt)
+            # We strip away any sneaky bold formatting just in case
+            clean_text = response.text.replace("**", "").replace("Answer:", "ANSWER:").replace("Riddle:", "RIDDLE:")
+            text_data = clean_text.split("ANSWER:")
+            
             st.session_state.current_riddle = text_data[0].replace("RIDDLE:", "").strip()
             st.session_state.real_answer = text_data[1].strip()
-            st.session_state.lives = 3 # Reset lives for new riddle
-            st.session_state.hint = "" # Clear old hints
+            st.session_state.lives = 3 
+            st.session_state.hint = "" 
             st.rerun()
-        except:
-            st.error("AI got confused. Click generate again!")
+        except Exception as e:
+            # If it fails now, it will tell us EXACTLY why!
+            st.error(f"Developer Error: {e}")
+            st.info(f"The AI actually said: {response.text}")
+
 
 # Display Riddle & Gameplay
 if st.session_state.current_riddle:
