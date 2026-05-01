@@ -3,7 +3,7 @@ import google.generativeai as genai
 import time
 
 # =========================================
-# 1. PAGE CONFIG
+# PAGE CONFIG
 # =========================================
 st.set_page_config(
     page_title="Riddle Master",
@@ -12,14 +12,14 @@ st.set_page_config(
 )
 
 # =========================================
-# 2. GEMINI SETUP
+# GEMINI API SETUP
 # =========================================
 genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
 
 model = genai.GenerativeModel("gemini-2.5-flash-lite")
 
 # =========================================
-# 3. SESSION STATE
+# SESSION STATE DEFAULTS
 # =========================================
 defaults = {
     "language": None,
@@ -29,7 +29,6 @@ defaults = {
     "real_answer": "",
     "lives": 3,
     "hint": "",
-    "answered": False,
 }
 
 for key, value in defaults.items():
@@ -37,41 +36,37 @@ for key, value in defaults.items():
         st.session_state[key] = value
 
 # =========================================
-# 4. FUNCTIONS
+# FUNCTIONS
 # =========================================
 
 def generate_riddle(difficulty, theme, language):
-    """
-    Generate a riddle using Gemini AI
-    """
 
     prompt = f"""
 Generate ONE unique {difficulty} riddle about {theme} in {language}.
 
-STRICT RULES:
-1. Keep riddle short.
+RULES:
+1. Keep the riddle short.
 2. Answer must be ONE WORD only.
 3. Use EXACT format below.
 
-RIDDLE: <riddle here>
-ANSWER: <answer here>
+RIDDLE: <riddle>
+ANSWER: <answer>
 """
 
     response = model.generate_content(prompt)
 
-    clean_text = response.text.strip()
+    text = response.text.strip()
 
-    clean_text = (
-        clean_text
-        .replace("**", "")
-        .replace("Answer:", "ANSWER:")
+    text = (
+        text.replace("**", "")
         .replace("Riddle:", "RIDDLE:")
+        .replace("Answer:", "ANSWER:")
     )
 
-    if "ANSWER:" not in clean_text:
+    if "ANSWER:" not in text:
         return None, None
 
-    parts = clean_text.split("ANSWER:")
+    parts = text.split("ANSWER:")
 
     riddle = parts[0].replace("RIDDLE:", "").strip()
     answer = parts[1].strip()
@@ -80,9 +75,6 @@ ANSWER: <answer here>
 
 
 def generate_hint(riddle, answer, language):
-    """
-    Generate hint using Gemini
-    """
 
     prompt = f"""
 Give a SHORT hint in {language}.
@@ -91,8 +83,8 @@ Riddle: {riddle}
 Answer: {answer}
 
 Rules:
-- Do not reveal the answer.
-- Maximum 1 sentence.
+- Do not reveal answer
+- Maximum one sentence
 """
 
     response = model.generate_content(prompt)
@@ -100,8 +92,24 @@ Rules:
     return response.text.strip()
 
 
+def load_new_riddle():
+
+    riddle, answer = generate_riddle(
+        difficulty,
+        theme,
+        st.session_state.language
+    )
+
+    if riddle and answer:
+
+        st.session_state.current_riddle = riddle
+        st.session_state.real_answer = answer
+        st.session_state.hint = ""
+        st.session_state.lives = 3
+
+
 # =========================================
-# 5. LANGUAGE SELECTOR
+# LANGUAGE SELECTOR
 # =========================================
 if st.session_state.language is None:
 
@@ -125,12 +133,12 @@ if st.session_state.language is None:
     st.stop()
 
 # =========================================
-# 6. MAIN TITLE
+# MAIN TITLE
 # =========================================
 st.title(f"🧩 Riddle Master ({st.session_state.language})")
 
 # =========================================
-# 7. SIDEBAR
+# SIDEBAR
 # =========================================
 with st.sidebar:
 
@@ -156,7 +164,7 @@ with st.sidebar:
         st.rerun()
 
 # =========================================
-# 8. SCOREBOARD
+# SCOREBOARD
 # =========================================
 a, b, c = st.columns(3)
 
@@ -167,38 +175,15 @@ c.metric("❤️ Lives", st.session_state.lives)
 st.divider()
 
 # =========================================
-# 9. GENERATE NEW RIDDLE BUTTON
+# AUTO LOAD FIRST RIDDLE
 # =========================================
-if st.button("🎲 Generate New Riddle", use_container_width=True):
+if st.session_state.current_riddle == "":
 
-    with st.spinner("Generating awesome riddle..."):
-
-        try:
-
-            riddle, answer = generate_riddle(
-                difficulty,
-                theme,
-                st.session_state.language
-            )
-
-            if riddle and answer:
-
-                st.session_state.current_riddle = riddle
-                st.session_state.real_answer = answer
-                st.session_state.hint = ""
-                st.session_state.lives = 3
-                st.session_state.answered = False
-
-                st.rerun()
-
-            else:
-                st.error("AI returned invalid format. Try again.")
-
-        except Exception as e:
-            st.error(f"Error: {e}")
+    with st.spinner("Generating riddle..."):
+        load_new_riddle()
 
 # =========================================
-# 10. DISPLAY RIDDLE
+# DISPLAY RIDDLE
 # =========================================
 if st.session_state.current_riddle:
 
@@ -213,7 +198,7 @@ if st.session_state.current_riddle:
 
         if st.session_state.streak >= 2:
 
-            with st.spinner("Thinking of a hint..."):
+            with st.spinner("Generating hint..."):
 
                 hint = generate_hint(
                     st.session_state.current_riddle,
@@ -227,7 +212,7 @@ if st.session_state.current_riddle:
                 st.rerun()
 
         else:
-            st.warning("You need at least 2 streak points.")
+            st.warning("Need at least 2 points!")
 
     # =====================================
     # SHOW HINT
@@ -240,11 +225,11 @@ if st.session_state.current_riddle:
     # =====================================
     user_guess = st.text_input(
         "Your Answer",
-        placeholder="Type your answer here..."
+        placeholder="Type answer here..."
     )
 
     # =====================================
-    # SUBMIT ANSWER
+    # SUBMIT BUTTON
     # =====================================
     if st.button("✅ Submit Answer", use_container_width=True):
 
@@ -255,7 +240,7 @@ if st.session_state.current_riddle:
         if player_answer == correct_answer:
 
             st.success(
-                f"🎉 Correct! The answer was: "
+                f"🎉 Correct! Answer was: "
                 f"{st.session_state.real_answer}"
             )
 
@@ -267,13 +252,10 @@ if st.session_state.current_riddle:
 
                 st.session_state.high_score = st.session_state.streak
 
-            st.session_state.answered = True
-
             time.sleep(2)
 
-            st.session_state.current_riddle = ""
-            st.session_state.real_answer = ""
-            st.session_state.hint = ""
+            # AUTO LOAD NEXT RIDDLE
+            load_new_riddle()
 
             st.rerun()
 
@@ -285,35 +267,21 @@ if st.session_state.current_riddle:
 
                 st.error(
                     f"💀 Game Over! "
-                    f"The answer was: {st.session_state.real_answer}"
+                    f"Answer was: {st.session_state.real_answer}"
                 )
 
                 st.session_state.streak = 0
 
                 time.sleep(2)
 
-                st.session_state.current_riddle = ""
-                st.session_state.real_answer = ""
-                st.session_state.hint = ""
+                # AUTO LOAD NEW RIDDLE
+                load_new_riddle()
 
                 st.rerun()
 
             else:
 
                 st.error(
-                    f"❌ Wrong Answer! "
-                    f"{st.session_state.lives} lives remaining."
+                    f"❌ Wrong! "
+                    f"{st.session_state.lives} lives left."
                 )
-
-# =========================================
-# 11. EMPTY STATE
-# =========================================
-else:
-
-    st.markdown(
-        """
-        ## 👇 Start Playing
-        
-        Press **Generate New Riddle** to begin!
-        """
-    )
