@@ -34,7 +34,7 @@ for key, value in defaults.items():
         st.session_state[key] = value
 
 # =========================================
-# FUNCTIONS (Now Bulletproof)
+# FUNCTIONS
 # =========================================
 def generate_riddle(diff, thm, lang):
     prompt = f"""
@@ -65,8 +65,11 @@ ANSWER: <answer>
 
 def generate_hint(riddle, answer, lang):
     prompt = f"Give a SHORT hint in {lang}. \nRiddle: {riddle}\nAnswer: {answer}\nRules: Do not reveal answer, Max one sentence."
-    response = model.generate_content(prompt)
-    return response.text.strip()
+    try:
+        response = model.generate_content(prompt)
+        return response.text.strip()
+    except:
+        return "Hint system is currently cooling down!"
 
 def load_new_riddle(diff, thm, lang):
     riddle, answer = generate_riddle(diff, thm, lang)
@@ -77,6 +80,10 @@ def load_new_riddle(diff, thm, lang):
         st.session_state.lives = 3
         st.session_state.show_next = False
         st.session_state.status_msg = "" 
+    else:
+        # THE FIX: If AI fails, don't freeze the screen!
+        st.session_state.current_riddle = "⚠️ The AI got confused! Please click the 'Force New Riddle' button above."
+        st.session_state.show_next = False
 
 # =========================================
 # LANGUAGE SELECTOR
@@ -114,6 +121,7 @@ with st.sidebar:
 # SKIP BUTTON 
 if st.button("🔄 Force New Riddle", use_container_width=True):
     st.session_state.current_riddle = ""
+    st.session_state.show_next = False # Safety reset
     st.rerun()
 
 # SCOREBOARD
@@ -128,7 +136,6 @@ st.divider()
 # =========================================
 if st.session_state.current_riddle == "":
     with st.spinner("Generating unique riddle..."):
-        # We explicitly pass the variables so they never get lost!
         load_new_riddle(difficulty, theme, st.session_state.language)
 
 if st.session_state.current_riddle:
@@ -147,7 +154,6 @@ if st.session_state.current_riddle:
     if st.session_state.hint:
         st.warning(f"💡 Hint: {st.session_state.hint}")
 
-    # Display Status Messages Safely
     if st.session_state.status_msg:
         if "Correct" in st.session_state.status_msg:
             st.success(st.session_state.status_msg)
@@ -157,7 +163,7 @@ if st.session_state.current_riddle:
             st.error(st.session_state.status_msg)
 
     # Input Form 
-    if not st.session_state.show_next:
+    if not st.session_state.show_next and "⚠️" not in st.session_state.current_riddle:
         with st.form("guess_form"):
             user_guess = st.text_input("Your Answer", placeholder="Type answer here...")
             submitted = st.form_submit_button("✅ Submit Answer", use_container_width=True)
@@ -170,4 +176,24 @@ if st.session_state.current_riddle:
                     st.session_state.status_msg = f"🎉 Correct! Answer was: {st.session_state.real_answer}"
                     st.session_state.streak += 10
                     if st.session_state.streak > st.session_state.high_score:
-                        st.session_state.high_score = st
+                        st.session_state.high_score = st.session_state.streak
+                    st.session_state.show_next = True
+                else:
+                    st.session_state.lives -= 1
+                    if st.session_state.lives <= 0:
+                        st.session_state.status_msg = f"💀 Game Over! Answer was: {st.session_state.real_answer}"
+                        st.session_state.streak = 0
+                        st.session_state.show_next = True
+                    else:
+                        st.session_state.status_msg = f"❌ Wrong! {st.session_state.lives} lives left."
+                
+                st.rerun()
+
+    # Next Button Layer
+    if st.session_state.show_next:
+        st.markdown("---")
+        if st.button("➡️ GET NEXT RIDDLE", use_container_width=True, type="primary"):
+            st.session_state.current_riddle = ""
+            st.session_state.status_msg = ""
+            st.session_state.show_next = False # THE FIX: Force the UI to reset!
+            st.rerun()
