@@ -1,14 +1,12 @@
 import streamlit as st
 import google.generativeai as genai
+import time
+import random
 
 # =========================================
 # PAGE CONFIG
 # =========================================
-st.set_page_config(
-    page_title="Riddle Master",
-    page_icon="🧩",
-    layout="centered"
-)
+st.set_page_config(page_title="Riddle Master", page_icon="🧩", layout="centered")
 
 # =========================================
 # GEMINI API SETUP
@@ -27,7 +25,8 @@ defaults = {
     "real_answer": "",
     "lives": 3,
     "hint": "",
-    "show_next": False, # <-- NEW STATE ADDED HERE
+    "show_next": False,
+    "status_msg": "", 
 }
 
 for key, value in defaults.items():
@@ -38,8 +37,11 @@ for key, value in defaults.items():
 # FUNCTIONS
 # =========================================
 def generate_riddle(difficulty, theme, language):
+    # Added a Random ID to force the AI to be unique every single time!
     prompt = f"""
-Generate ONE unique {difficulty} riddle about {theme} in {language}.
+Generate ONE highly unique {difficulty} riddle about {theme} in {language}.
+Make it completely different from standard riddles. (Seed: {random.randint(1, 100000)})
+
 RULES:
 1. Keep the riddle short.
 2. Answer must be ONE WORD only.
@@ -71,7 +73,8 @@ def load_new_riddle():
         st.session_state.real_answer = answer
         st.session_state.hint = ""
         st.session_state.lives = 3
-        st.session_state.show_next = False # Reset the button state
+        st.session_state.show_next = False
+        st.session_state.status_msg = "" 
 
 # =========================================
 # LANGUAGE SELECTOR
@@ -106,8 +109,8 @@ with st.sidebar:
             st.session_state[key] = value
         st.rerun()
 
-# SKIP BUTTON (Just in case they get stuck)
-if st.button("⏭️ Skip Riddle", use_container_width=True):
+# SKIP BUTTON (The ultimate escape hatch)
+if st.button("🔄 Force New Riddle", use_container_width=True):
     st.session_state.current_riddle = ""
     st.rerun()
 
@@ -119,19 +122,16 @@ c.metric("❤️ Lives", st.session_state.lives)
 st.divider()
 
 # =========================================
-# GAMEPLAY ENGINE
+# GAMEPLAY ENGINE (V3 - Bulletproof)
 # =========================================
-# Auto-load if blank
 if st.session_state.current_riddle == "":
-    with st.spinner("Generating new riddle..."):
+    with st.spinner("Generating unique riddle..."):
         load_new_riddle()
 
-# Display Riddle
 if st.session_state.current_riddle:
     st.subheader("🧠 Your Riddle")
     st.info(st.session_state.current_riddle)
 
-    # Hint System
     if st.button("💡 Get Hint (-2 points)"):
         if st.session_state.streak >= 2:
             with st.spinner("Generating hint..."):
@@ -144,39 +144,46 @@ if st.session_state.current_riddle:
     if st.session_state.hint:
         st.warning(f"💡 Hint: {st.session_state.hint}")
 
-    # =====================================
-    # THE NEW LOGIC FLOW
-    # =====================================
-    # Only show the input box if they HAVEN'T won or lost yet
+    # Display Status Messages Safely
+    if st.session_state.status_msg:
+        if "Correct" in st.session_state.status_msg:
+            st.success(st.session_state.status_msg)
+        elif "Wrong" in st.session_state.status_msg:
+            st.warning(st.session_state.status_msg)
+        else:
+            st.error(st.session_state.status_msg)
+
+    # Input Form (Using st.form stops the "Enter Key" glitch)
     if not st.session_state.show_next:
-        user_guess = st.text_input("Your Answer", placeholder="Type answer here...")
+        with st.form("guess_form"):
+            user_guess = st.text_input("Your Answer", placeholder="Type answer here...")
+            submitted = st.form_submit_button("✅ Submit Answer", use_container_width=True)
 
-        if st.button("✅ Submit Answer", use_container_width=True):
-            correct_answer = st.session_state.real_answer.strip().lower()
-            player_answer = user_guess.strip().lower()
+            if submitted:
+                correct_answer = st.session_state.real_answer.strip().lower()
+                player_answer = user_guess.strip().lower()
 
-            if player_answer == correct_answer:
-                st.success(f"🎉 Correct! Answer was: {st.session_state.real_answer}")
-                st.balloons()
-                st.session_state.streak += 10
-                if st.session_state.streak > st.session_state.high_score:
-                    st.session_state.high_score = st.session_state.streak
-                
-                # Turn on the "Next Button" flag instead of freezing
-                st.session_state.show_next = True 
-
-            else:
-                st.session_state.lives -= 1
-                if st.session_state.lives <= 0:
-                    st.error(f"💀 Game Over! Answer was: {st.session_state.real_answer}")
-                    st.session_state.streak = 0
-                    st.session_state.show_next = True # Let them click "Next" to restart
+                if player_answer == correct_answer:
+                    st.session_state.status_msg = f"🎉 Correct! Answer was: {st.session_state.real_answer}"
+                    st.session_state.streak += 10
+                    if st.session_state.streak > st.session_state.high_score:
+                        st.session_state.high_score = st.session_state.streak
+                    st.session_state.show_next = True
                 else:
-                    st.error(f"❌ Wrong! {st.session_state.lives} lives left.")
+                    st.session_state.lives -= 1
+                    if st.session_state.lives <= 0:
+                        st.session_state.status_msg = f"💀 Game Over! Answer was: {st.session_state.real_answer}"
+                        st.session_state.streak = 0
+                        st.session_state.show_next = True
+                    else:
+                        st.session_state.status_msg = f"❌ Wrong! {st.session_state.lives} lives left."
+                
+                st.rerun()
 
-    # Show the big NEXT button if they won or died
+    # Next Button Layer
     if st.session_state.show_next:
         st.markdown("---")
         if st.button("➡️ GET NEXT RIDDLE", use_container_width=True, type="primary"):
-            st.session_state.current_riddle = "" # Wipe the old riddle
-            st.rerun() # Reload the page to fetch a new one
+            st.session_state.current_riddle = ""
+            st.session_state.status_msg = ""
+            st.rerun()
