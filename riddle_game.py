@@ -34,12 +34,11 @@ for key, value in defaults.items():
         st.session_state[key] = value
 
 # =========================================
-# FUNCTIONS
+# FUNCTIONS (Now Bulletproof)
 # =========================================
-def generate_riddle(difficulty, theme, language):
-    # Added a Random ID to force the AI to be unique every single time!
+def generate_riddle(diff, thm, lang):
     prompt = f"""
-Generate ONE highly unique {difficulty} riddle about {theme} in {language}.
+Generate ONE highly unique {diff} difficulty riddle about {thm} in {lang}.
 Make it completely different from standard riddles. (Seed: {random.randint(1, 100000)})
 
 RULES:
@@ -50,24 +49,27 @@ RULES:
 RIDDLE: <riddle>
 ANSWER: <answer>
 """
-    response = model.generate_content(prompt)
-    text = response.text.strip().replace("**", "").replace("Riddle:", "RIDDLE:").replace("Answer:", "ANSWER:")
+    try:
+        response = model.generate_content(prompt)
+        text = response.text.strip().replace("**", "").replace("Riddle:", "RIDDLE:").replace("Answer:", "ANSWER:")
 
-    if "ANSWER:" not in text:
+        if "ANSWER:" not in text:
+            return None, None
+
+        parts = text.split("ANSWER:")
+        riddle = parts[0].replace("RIDDLE:", "").strip()
+        answer = parts[1].strip()
+        return riddle, answer
+    except:
         return None, None
 
-    parts = text.split("ANSWER:")
-    riddle = parts[0].replace("RIDDLE:", "").strip()
-    answer = parts[1].strip()
-    return riddle, answer
-
-def generate_hint(riddle, answer, language):
-    prompt = f"Give a SHORT hint in {language}. \nRiddle: {riddle}\nAnswer: {answer}\nRules: Do not reveal answer, Max one sentence."
+def generate_hint(riddle, answer, lang):
+    prompt = f"Give a SHORT hint in {lang}. \nRiddle: {riddle}\nAnswer: {answer}\nRules: Do not reveal answer, Max one sentence."
     response = model.generate_content(prompt)
     return response.text.strip()
 
-def load_new_riddle():
-    riddle, answer = generate_riddle(difficulty, theme, st.session_state.language)
+def load_new_riddle(diff, thm, lang):
+    riddle, answer = generate_riddle(diff, thm, lang)
     if riddle and answer:
         st.session_state.current_riddle = riddle
         st.session_state.real_answer = answer
@@ -109,7 +111,7 @@ with st.sidebar:
             st.session_state[key] = value
         st.rerun()
 
-# SKIP BUTTON (The ultimate escape hatch)
+# SKIP BUTTON 
 if st.button("🔄 Force New Riddle", use_container_width=True):
     st.session_state.current_riddle = ""
     st.rerun()
@@ -122,11 +124,12 @@ c.metric("❤️ Lives", st.session_state.lives)
 st.divider()
 
 # =========================================
-# GAMEPLAY ENGINE (V3 - Bulletproof)
+# GAMEPLAY ENGINE 
 # =========================================
 if st.session_state.current_riddle == "":
     with st.spinner("Generating unique riddle..."):
-        load_new_riddle()
+        # We explicitly pass the variables so they never get lost!
+        load_new_riddle(difficulty, theme, st.session_state.language)
 
 if st.session_state.current_riddle:
     st.subheader("🧠 Your Riddle")
@@ -153,7 +156,7 @@ if st.session_state.current_riddle:
         else:
             st.error(st.session_state.status_msg)
 
-    # Input Form (Using st.form stops the "Enter Key" glitch)
+    # Input Form 
     if not st.session_state.show_next:
         with st.form("guess_form"):
             user_guess = st.text_input("Your Answer", placeholder="Type answer here...")
@@ -167,23 +170,4 @@ if st.session_state.current_riddle:
                     st.session_state.status_msg = f"🎉 Correct! Answer was: {st.session_state.real_answer}"
                     st.session_state.streak += 10
                     if st.session_state.streak > st.session_state.high_score:
-                        st.session_state.high_score = st.session_state.streak
-                    st.session_state.show_next = True
-                else:
-                    st.session_state.lives -= 1
-                    if st.session_state.lives <= 0:
-                        st.session_state.status_msg = f"💀 Game Over! Answer was: {st.session_state.real_answer}"
-                        st.session_state.streak = 0
-                        st.session_state.show_next = True
-                    else:
-                        st.session_state.status_msg = f"❌ Wrong! {st.session_state.lives} lives left."
-                
-                st.rerun()
-
-    # Next Button Layer
-    if st.session_state.show_next:
-        st.markdown("---")
-        if st.button("➡️ GET NEXT RIDDLE", use_container_width=True, type="primary"):
-            st.session_state.current_riddle = ""
-            st.session_state.status_msg = ""
-            st.rerun()
+                        st.session_state.high_score = st
