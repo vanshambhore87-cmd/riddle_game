@@ -122,8 +122,8 @@ if st.session_state.language is None:
         st.session_state.language = "English"
         st.rerun()
 
-    if c2.button("🇪🇸 Español", use_container_width=True):
-        st.session_state.language = "Spanish"
+    if c2.button("🧡 मराठी ", use_container_width=True):
+        st.session_state.language = "Marathi"
         st.rerun()
 
     if c3.button("🇮🇳 हिन्दी", use_container_width=True):
