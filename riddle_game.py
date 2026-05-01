@@ -15,7 +15,7 @@ genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
 model = genai.GenerativeModel("gemini-2.5-flash-lite")
 
 # =========================================
-# SESSION STATE DEFAULTS
+# SESSION STATE DEFAULTS (Now holding all settings!)
 # =========================================
 defaults = {
     "language": None,
@@ -27,6 +27,8 @@ defaults = {
     "hint": "",
     "show_next": False,
     "status_msg": "", 
+    "difficulty": "Easy", # Locked into core memory
+    "theme": "Anything"   # Locked into core memory
 }
 
 for key, value in defaults.items():
@@ -81,7 +83,6 @@ def load_new_riddle(diff, thm, lang):
         st.session_state.show_next = False
         st.session_state.status_msg = "" 
     else:
-        # THE FIX: If AI fails, don't freeze the screen!
         st.session_state.current_riddle = "⚠️ The AI got confused! Please click the 'Force New Riddle' button above."
         st.session_state.show_next = False
 
@@ -110,8 +111,9 @@ st.title(f"🧩 Riddle Master ({st.session_state.language})")
 
 with st.sidebar:
     st.header("⚙️ Settings")
-    difficulty = st.selectbox("Difficulty", ["Easy", "Medium", "Hard", "Einstein"])
-    theme = st.selectbox("Theme", ["Anything", "Animals", "Technology", "History", "Funny"])
+    # Added "key=" to link dropdowns directly to core memory
+    st.selectbox("Difficulty", ["Easy", "Medium", "Hard", "Einstein"], key="difficulty")
+    st.selectbox("Theme", ["Anything", "Animals", "Technology", "History", "Funny"], key="theme")
     st.divider()
     if st.button("🌐 Change Language", use_container_width=True):
         for key, value in defaults.items():
@@ -121,7 +123,7 @@ with st.sidebar:
 # SKIP BUTTON 
 if st.button("🔄 Force New Riddle", use_container_width=True):
     st.session_state.current_riddle = ""
-    st.session_state.show_next = False # Safety reset
+    st.session_state.show_next = False 
     st.rerun()
 
 # SCOREBOARD
@@ -136,7 +138,8 @@ st.divider()
 # =========================================
 if st.session_state.current_riddle == "":
     with st.spinner("Generating unique riddle..."):
-        load_new_riddle(difficulty, theme, st.session_state.language)
+        # THE FIX: Calling difficulty and theme directly from Core Memory
+        load_new_riddle(st.session_state.difficulty, st.session_state.theme, st.session_state.language)
 
 if st.session_state.current_riddle:
     st.subheader("🧠 Your Riddle")
@@ -195,5 +198,5 @@ if st.session_state.current_riddle:
         if st.button("➡️ GET NEXT RIDDLE", use_container_width=True, type="primary"):
             st.session_state.current_riddle = ""
             st.session_state.status_msg = ""
-            st.session_state.show_next = False # THE FIX: Force the UI to reset!
+            st.session_state.show_next = False 
             st.rerun()
