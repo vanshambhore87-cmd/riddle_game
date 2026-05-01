@@ -1,6 +1,5 @@
 import streamlit as st
 import google.generativeai as genai
-import random
 
 # =========================================
 # PAGE CONFIG
@@ -14,12 +13,17 @@ st.set_page_config(
 # =========================================
 # GEMINI SETUP
 # =========================================
-genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
+genai.configure(
+    api_key=st.secrets["GEMINI_API_KEY"]
+)
 
-model = genai.GenerativeModel("gemini-2.5-flash-lite")
+# Better free quota model
+model = genai.GenerativeModel(
+    "gemini-1.5-flash"
+)
 
 # =========================================
-# SESSION STATE
+# SESSION STATE DEFAULTS
 # =========================================
 defaults = {
     "language": None,
@@ -36,7 +40,9 @@ defaults = {
 }
 
 for key, value in defaults.items():
+
     if key not in st.session_state:
+
         st.session_state[key] = value
 
 # =========================================
@@ -45,12 +51,13 @@ for key, value in defaults.items():
 def generate_riddle(diff, thm, lang):
 
     prompt = f"""
-Generate ONE {diff} riddle about {thm} in {lang}.
+Generate ONE short {diff} riddle
+about {thm} in {lang}.
 
 RULES:
-- Keep it short
-- Answer must be ONE WORD only
-- Do not explain answer
+- Short riddle
+- One word answer only
+- No explanation
 
 FORMAT:
 RIDDLE: question here
@@ -59,7 +66,9 @@ ANSWER: answer here
 
     try:
 
-        response = model.generate_content(prompt)
+        response = model.generate_content(
+            prompt
+        )
 
         text = response.text.strip()
 
@@ -77,34 +86,42 @@ ANSWER: answer here
             upper = line.upper()
 
             if upper.startswith("RIDDLE"):
+
                 parts = line.split(":", 1)
+
                 if len(parts) > 1:
+
                     riddle = parts[1].strip()
 
             elif upper.startswith("ANSWER"):
+
                 parts = line.split(":", 1)
+
                 if len(parts) > 1:
+
                     answer = parts[1].strip()
 
-        # FALLBACK
+        # Fallback system
         if riddle == "" or answer == "":
 
-            clean_lines = [
-                l.strip() for l in lines if l.strip()
+            clean = [
+                x.strip()
+                for x in lines
+                if x.strip()
             ]
 
-            if len(clean_lines) >= 2:
-                riddle = clean_lines[0]
-                answer = clean_lines[-1]
+            if len(clean) >= 2:
+
+                riddle = clean[0]
+                answer = clean[-1]
 
         if riddle and answer:
+
             return riddle, answer
 
         return None, None
 
-    except Exception as e:
-
-        st.error(f"AI Error: {e}")
+    except:
 
         return None, None
 
@@ -122,7 +139,9 @@ Do not reveal answer.
 
     try:
 
-        response = model.generate_content(prompt)
+        response = model.generate_content(
+            prompt
+        )
 
         return response.text.strip()
 
@@ -142,22 +161,23 @@ def load_new_riddle():
     if riddle and answer:
 
         st.session_state.current_riddle = riddle
+
         st.session_state.real_answer = answer
+
         st.session_state.hint = ""
+
         st.session_state.status_msg = ""
+
         st.session_state.show_next = False
+
         st.session_state.lives = 3
 
     else:
 
-        st.session_state.current_riddle = ""
-        st.session_state.real_answer = ""
-
         st.session_state.status_msg = (
-            "⚠️ AI failed to generate riddle. "
-            "Click below to try again."
+            "⚠️ AI busy or quota finished.\n"
+            "Please wait and try again."
         )
-
 
 # =========================================
 # LANGUAGE SELECTOR
@@ -166,23 +186,34 @@ if st.session_state.language is None:
 
     st.title("🧩 Riddle Master")
 
-    st.subheader("Choose your language")
+    st.subheader(
+        "Choose your language"
+    )
 
     c1, c2, c3 = st.columns(3)
 
-    if c1.button("🇺🇸 English", use_container_width=True):
+    if c1.button(
+        "🇺🇸 English",
+        use_container_width=True
+    ):
 
         st.session_state.language = "English"
 
         st.rerun()
 
-    if c2.button("🧡 मराठी", use_container_width=True):
+    if c2.button(
+        "🧡 मराठी",
+        use_container_width=True
+    ):
 
         st.session_state.language = "Marathi"
 
         st.rerun()
 
-    if c3.button("🇮🇳 हिन्दी", use_container_width=True):
+    if c3.button(
+        "🇮🇳 हिन्दी",
+        use_container_width=True
+    ):
 
         st.session_state.language = "Hindi"
 
@@ -193,7 +224,10 @@ if st.session_state.language is None:
 # =========================================
 # TITLE
 # =========================================
-st.title(f"🧩 Riddle Master ({st.session_state.language})")
+st.title(
+    f"🧩 Riddle Master "
+    f"({st.session_state.language})"
+)
 
 # =========================================
 # SIDEBAR
@@ -204,7 +238,12 @@ with st.sidebar:
 
     st.selectbox(
         "Difficulty",
-        ["Easy", "Medium", "Hard", "Einstein"],
+        [
+            "Easy",
+            "Medium",
+            "Hard",
+            "Einstein"
+        ],
         key="difficulty"
     )
 
@@ -228,62 +267,77 @@ with st.sidebar:
     ):
 
         for key, value in defaults.items():
+
             st.session_state[key] = value
 
         st.rerun()
 
 # =========================================
-# FORCE BUTTON
+# GENERATE BUTTON
 # =========================================
 if st.button(
-    "🔄 Force New Riddle",
+    "🎲 Generate Riddle",
     use_container_width=True
 ):
 
-    st.session_state.current_riddle = ""
+    with st.spinner(
+        "Generating riddle..."
+    ):
 
-    load_new_riddle()
+        st.session_state.current_riddle = ""
 
-    st.rerun()
+        load_new_riddle()
+
+        st.rerun()
 
 # =========================================
 # SCOREBOARD
 # =========================================
 a, b, c = st.columns(3)
 
-a.metric("🔥 Streak", st.session_state.streak)
+a.metric(
+    "🔥 Streak",
+    st.session_state.streak
+)
 
-b.metric("🏆 High Score", st.session_state.high_score)
+b.metric(
+    "🏆 High Score",
+    st.session_state.high_score
+)
 
-c.metric("❤️ Lives", st.session_state.lives)
+c.metric(
+    "❤️ Lives",
+    st.session_state.lives
+)
 
 st.divider()
-
-# =========================================
-# AUTO LOAD FIRST RIDDLE
-# =========================================
-if st.session_state.current_riddle == "":
-
-    with st.spinner("Generating riddle..."):
-
-        load_new_riddle()
 
 # =========================================
 # STATUS MESSAGE
 # =========================================
 if st.session_state.status_msg != "":
 
-    if "Correct" in st.session_state.status_msg:
+    if "Correct" in (
+        st.session_state.status_msg
+    ):
 
-        st.success(st.session_state.status_msg)
+        st.success(
+            st.session_state.status_msg
+        )
 
-    elif "Wrong" in st.session_state.status_msg:
+    elif "Wrong" in (
+        st.session_state.status_msg
+    ):
 
-        st.warning(st.session_state.status_msg)
+        st.warning(
+            st.session_state.status_msg
+        )
 
     else:
 
-        st.error(st.session_state.status_msg)
+        st.error(
+            st.session_state.status_msg
+        )
 
 # =========================================
 # MAIN GAME
@@ -292,21 +346,31 @@ if st.session_state.real_answer != "":
 
     st.subheader("🧠 Your Riddle")
 
-    st.info(st.session_state.current_riddle)
+    st.info(
+        st.session_state.current_riddle
+    )
 
     # =====================================
     # HINT BUTTON
     # =====================================
-    if st.button("💡 Get Hint (-2 points)"):
+    if st.button(
+        "💡 Get Hint (-2 points)"
+    ):
 
-        if st.session_state.streak >= 2:
+        if (
+            st.session_state.streak >= 2
+        ):
 
-            with st.spinner("Generating hint..."):
+            with st.spinner(
+                "Generating hint..."
+            ):
 
-                st.session_state.hint = generate_hint(
-                    st.session_state.current_riddle,
-                    st.session_state.real_answer,
-                    st.session_state.language
+                st.session_state.hint = (
+                    generate_hint(
+                        st.session_state.current_riddle,
+                        st.session_state.real_answer,
+                        st.session_state.language
+                    )
                 )
 
                 st.session_state.streak -= 2
@@ -315,7 +379,9 @@ if st.session_state.real_answer != "":
 
         else:
 
-            st.warning("Need at least 2 points!")
+            st.warning(
+                "Need at least 2 points!"
+            )
 
     # =====================================
     # SHOW HINT
@@ -323,7 +389,8 @@ if st.session_state.real_answer != "":
     if st.session_state.hint:
 
         st.warning(
-            f"💡 Hint: {st.session_state.hint}"
+            f"💡 Hint: "
+            f"{st.session_state.hint}"
         )
 
     # =====================================
@@ -335,12 +402,14 @@ if st.session_state.real_answer != "":
 
             user_guess = st.text_input(
                 "Your Answer",
-                placeholder="Type answer here..."
+                placeholder="Type answer..."
             )
 
-            submitted = st.form_submit_button(
-                "✅ Submit Answer",
-                use_container_width=True
+            submitted = (
+                st.form_submit_button(
+                    "✅ Submit Answer",
+                    use_container_width=True
+                )
             )
 
             if submitted:
@@ -357,7 +426,10 @@ if st.session_state.real_answer != "":
                     .lower()
                 )
 
-                if player_answer == correct_answer:
+                if (
+                    player_answer ==
+                    correct_answer
+                ):
 
                     st.session_state.status_msg = (
                         f"🎉 Correct! "
@@ -382,7 +454,9 @@ if st.session_state.real_answer != "":
 
                     st.session_state.lives -= 1
 
-                    if st.session_state.lives <= 0:
+                    if (
+                        st.session_state.lives <= 0
+                    ):
 
                         st.session_state.status_msg = (
                             f"💀 Game Over! "
@@ -398,7 +472,8 @@ if st.session_state.real_answer != "":
 
                         st.session_state.status_msg = (
                             f"❌ Wrong! "
-                            f"{st.session_state.lives} lives left."
+                            f"{st.session_state.lives} "
+                            f"lives left."
                         )
 
                 st.rerun()
@@ -417,9 +492,13 @@ if st.session_state.real_answer != "":
         ):
 
             st.session_state.current_riddle = ""
+
             st.session_state.real_answer = ""
+
             st.session_state.hint = ""
+
             st.session_state.show_next = False
+
             st.session_state.status_msg = ""
 
             load_new_riddle()
