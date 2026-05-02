@@ -16,21 +16,36 @@ RIDDLES_DB = {
         {"riddle": "What has keys but no locks?", "answer": "piano", "hint": "It makes beautiful music."},
         {"riddle": "I have branches, but no fruit, trunk or leaves. What am I?", "answer": "bank", "hint": "A place that holds money."},
         {"riddle": "What has one eye, but can't see?", "answer": "needle", "hint": "Used for sewing clothes."},
-        {"riddle": "What has legs, but doesn't walk?", "answer": "table", "hint": "You eat your dinner on it."}
+        {"riddle": "What has legs, but doesn't walk?", "answer": "table", "hint": "You eat your dinner on it."},
+        {"riddle": "The more of this there is, the less you see. What is it?", "answer": "darkness", "hint": "Happens when the sun goes down."},
+        {"riddle": "What gets wetter the more it dries?", "answer": "towel", "hint": "You use it after a shower."},
+        {"riddle": "I am tall when I'm young, and I'm short when I'm old.", "answer": "candle", "hint": "Provides light and melts."},
+        {"riddle": "What has a thumb and four fingers, but is not a hand?", "answer": "glove", "hint": "Keeps you warm in winter."},
+        {"riddle": "What goes up but never comes down?", "answer": "age", "hint": "It changes every birthday."}
     ],
     "Hindi": [
         {"riddle": "काला घोड़ा, सफेद सवारी, एक उतरा तो दूसरे की बारी।", "answer": "तवा", "hint": "रोटी बनाने के काम आता है।"},
         {"riddle": "एक फूल काले रंग का, सिर पर हमेशा सुहाए।", "answer": "छतरी", "hint": "बारिश में काम आती है।"},
         {"riddle": "कटोरी पे कटोरी, बेटा बाप से भी गोरा।", "answer": "प्याज", "hint": "काटते समय आंसू आते हैं।"},
         {"riddle": "लाल पूंछ हरी बिलाई, इसका हल बता मेरे भाई।", "answer": "मूली", "hint": "यह एक सफेद सब्जी/सलाद है।"},
-        {"riddle": "बीमार नहीं रहती, फिर भी खाती है गोली।", "answer": "बंदूक", "hint": "सैनिक इसका इस्तेमाल करते हैं।"}
+        {"riddle": "बीमार नहीं रहती, फिर भी खाती है गोली।", "answer": "बंदूक", "hint": "सैनिक इसका इस्तेमाल करते हैं।"},
+        {"riddle": "हरी डिब्बी, पीला मकान, उसमें बैठे कल्लू राम।", "answer": "पपीता", "hint": "एक मीठा फल है जिसके बीज काले होते हैं।"},
+        {"riddle": "बिना बुलाए डॉक्टर आए, सूई लगाकर फुर्र हो जाए।", "answer": "मच्छर", "hint": "रात को सोने नहीं देता।"},
+        {"riddle": "पैर नहीं पर चलती है, कभी न राह भटकती है।", "answer": "घड़ी", "hint": "समय बताती है।"},
+        {"riddle": "तीन अक्षर का मेरा नाम, उलटा सीधा एक समान।", "answer": "नयन", "hint": "आंख का पर्यायवाची शब्द।"},
+        {"riddle": "सुबह आए, शाम को जाए, दुनिया भर की खबर लाए।", "answer": "अखबार", "hint": "हम इसे रोज पढ़ते हैं।"}
     ],
     "Marathi": [
         {"riddle": "दोन भाऊ शेजारी, भेट नाही संसारी.", "answer": "डोळे", "hint": "आपण यातून पाहतो."},
         {"riddle": "हिरवा रावा, लाल रस्ता, आत मध्ये काळ्या बिया.", "answer": "कलिंगड", "hint": "उन्हाळ्यात खातात ते फळ."},
         {"riddle": "बत्तीस चिंचोके, त्यात एकच साप.", "answer": "जीभ", "hint": "तोंडात असते आणि चव समजते."},
         {"riddle": "काळा कुत्रा, भिंतीला घासला की लाल होतो.", "answer": "काडीपेटी", "hint": "आग लावण्यासाठी वापरतात."},
-        {"riddle": "एका म्हातारीला बारा मुले, तरीही ती एकटीच.", "answer": "घड्याळ", "hint": "वेळ दाखवते."}
+        {"riddle": "एका म्हातारीला बारा मुले, तरीही ती एकटीच.", "answer": "घड्याळ", "hint": "वेळ दाखवते."},
+        {"riddle": "पांढरे शेत, काळे बी, जो पेरेल तोच शहाणा.", "answer": "पुस्तक", "hint": "वाचनासाठी वापरतात."},
+        {"riddle": "ओळख पाहू मी कोण? पाय नाहीत पण चालतो, तोंड नाही पण बोलतो.", "answer": "रुपया", "hint": "पैसे किंवा नाणे."},
+        {"riddle": "आईच्या गळ्यात मोत्याचा हार, पोरगं रडतंय वारंवार.", "answer": "जाते", "hint": "धान्य दळण्यासाठी जुने साधन."},
+        {"riddle": "अंगभर डोळे, तरीही आंधळा.", "answer": "जाळे", "hint": "कोळी घराच्या कोपऱ्यात बनवतो."},
+        {"riddle": "लहानशी डबी, त्यात खडीसाखर.", "answer": "दात", "hint": "अन्न चावण्यासाठी लागतात."}
     ]
 }
 
