@@ -222,7 +222,17 @@ with st.sidebar:
         except:
             st.warning("Sheet needs 'Name' and 'Score' in the first row!")
     else:
-        st.error("Cloud Database Offline")
+        st.error("Cloud Database Offline") 
+   # Add this right below the leaderboard inside the sidebar!
+    st.divider()
+    if st.button("🌍 Change Language"):
+        # This resets the game and takes them back to the start screen
+        st.session_state.update({
+            "language": None, "streak": 0, "lives": 3, 
+            "current_riddle": "", "status_msg": ""
+        })
+        st.rerun()
+
 
 # --- LANGUAGE SELECTOR ---
 if st.session_state.language is None:
