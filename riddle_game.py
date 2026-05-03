@@ -80,7 +80,7 @@ RIDDLES_DB = {
         {"riddle": "काला घोड़ा, सफेद सवारी, एक उतरा तो दूसरे की बारी।", "answer": "तवा", "hint": "रोटी बनाने के काम आता है।"},
         {"riddle": "एक फूल काले रंग का, सिर पर हमेशा सुहाए।", "answer": "छतरी", "hint": "बारिश में काम आती है।"},
         {"riddle": "कटोरी पे कटोरी, बेटा बाप से भी गोरा।", "answer": "प्याज", "hint": "काटते समय आंसू आते हैं।"},
-        {"riddle": "लाल पूंछ हरी बिलाई, इसका हल बता मेरे भाई।", "answer": "मूली", "hint": "यह एक सफेद सब्जी/सलाद है।"},
+        {"riddle": "लाल पूंछ हरी बिलाई, इसका हल बता मेरे भाई।", "answer": "मूली", "hint": "यह एक सफेद सब्जी/सलाद蝇है।"},
         {"riddle": "बीमार नहीं रहती, फिर भी खाती है गोली।", "answer": "बंदूक", "hint": "सैनिक इसका इस्तेमाल करते हैं।"},
         {"riddle": "हरी डिब्बी, पीला मकान, उसमें बैठे कल्लू राम।", "answer": "पपीता", "hint": "एक मीठा फल है जिसके बीज काले होते हैं।"},
         {"riddle": "बिना बुलाए डॉक्टर आए, सूई लगाकर फुर्र हो जाए।", "answer": "मच्छर", "hint": "रात को सोने नहीं देता।"},
@@ -189,7 +189,8 @@ RIDDLES_DB = {
 if "language" not in st.session_state:
     st.session_state.update({
         "language": None, "streak": 0, "high_score": 0, "current_riddle": "",
-        "real_answer": "", "lives": 3, "hint": "", "show_next": False, "status_msg": ""
+        "real_answer": "", "lives": 3, "hint": "", "show_next": False, "status_msg": "",
+        "just_won": False # <-- Added balloon trigger memory
     })
 
 # =========================================
@@ -223,16 +224,15 @@ with st.sidebar:
             st.warning("Sheet needs 'Name' and 'Score' in the first row!")
     else:
         st.error("Cloud Database Offline") 
-   # Add this right below the leaderboard inside the sidebar!
+   
+    # Change Language Button
     st.divider()
     if st.button("🌍 Change Language"):
-        # This resets the game and takes them back to the start screen
         st.session_state.update({
             "language": None, "streak": 0, "lives": 3, 
             "current_riddle": "", "status_msg": ""
         })
         st.rerun()
-
 
 # --- LANGUAGE SELECTOR ---
 if st.session_state.language is None:
@@ -282,6 +282,7 @@ if not st.session_state.show_next:
                 if st.session_state.streak > st.session_state.high_score:
                     st.session_state.high_score = st.session_state.streak
                 st.session_state.show_next = True
+                st.session_state.just_won = True # <-- Trigger balloons!
             else:
                 st.session_state.lives -= 1
                 if st.session_state.lives <= 0:
@@ -294,6 +295,11 @@ if not st.session_state.show_next:
 # --- POST-GAME / NEXT LEVEL ---
 if st.session_state.status_msg:
     st.write(st.session_state.status_msg)
+
+# --- LAUNCH BALLOONS ---
+if st.session_state.get("just_won", False):
+    st.balloons()
+    st.session_state.just_won = False # Turn off so they don't loop forever
 
 if st.session_state.show_next:
     # If Game Over, show Score Submission
