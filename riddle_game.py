@@ -19,9 +19,21 @@ def get_leaderboard_sheet():
 # =========================================
 # 2. APP CONFIG & DATA
 # =========================================
-st.set_page_config(page_title="Riddle Master", page_icon="🧩", layout="centered")
+st.set_page_config(page_title="Riddle App", page_icon="🧩", layout="centered")
+
+# --- HIDE STREAMLIT BRANDING ---
+hide_st_style = """
+            <style>
+            #MainMenu {visibility: hidden;}
+            footer {visibility: hidden;}
+            header {visibility: hidden;}
+            </style>
+            """
+st.markdown(hide_st_style, unsafe_allow_html=True)
 
 # --- PASTE YOUR 150 RIDDLES BACK HERE ---
+# ...
+
 RIDDLES_DB = {
         "English": [
         {"riddle": "What has to be broken before you can use it?", "answer": "egg", "hint": "Often eaten for breakfast."},
