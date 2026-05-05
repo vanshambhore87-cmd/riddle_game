@@ -24,15 +24,18 @@ st.set_page_config(page_title="Riddle App", page_icon="🧩", layout="centered")
 # --- HIDE STREAMLIT BRANDING ---
 hide_st_style = """
             <style>
+            /* Hide the 3-dot menu */
             #MainMenu {visibility: hidden;}
+            /* Hide the Streamlit watermark at the bottom */
             footer {visibility: hidden;}
-            /* This hides the top right GitHub/Fork buttons */
-            [data-testid="stToolbar"] {visibility: hidden !important;}
-            /* This ensures the Sidebar mobile button stays visible! */
-            [data-testid="collapsedControl"] {visibility: visible !important;}
+            /* Hide the GitHub and Fork buttons on the right */
+            [data-testid="stToolbar"] {display: none !important;}
+            /* Make the top bar transparent so the Sidebar button shows clearly */
+            header {background-color: transparent !important;}
             </style>
             """
 st.markdown(hide_st_style, unsafe_allow_html=True)
+
 
 
 # --- PASTE YOUR 150 RIDDLES BACK HERE ---
