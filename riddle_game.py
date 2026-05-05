@@ -26,8 +26,10 @@ hide_st_style = """
             <style>
             #MainMenu {visibility: hidden;}
             footer {visibility: hidden;}
-            /* This hides the GitHub/Fork buttons but keeps the mobile sidebar button! */
-            [data-testid="stToolbar"] {display: none !important;}
+            /* This hides the top right GitHub/Fork buttons */
+            [data-testid="stToolbar"] {visibility: hidden !important;}
+            /* This ensures the Sidebar mobile button stays visible! */
+            [data-testid="collapsedControl"] {visibility: visible !important;}
             </style>
             """
 st.markdown(hide_st_style, unsafe_allow_html=True)
