@@ -195,7 +195,7 @@ if "language" not in st.session_state:
     st.session_state.update({
         "language": None, "streak": 0, "high_score": 0, "current_riddle": "",
         "real_answer": "", "lives": 3, "hint": "", "show_next": False, "status_msg": "",
-        "just_won": False # <-- Added balloon trigger memory
+        "just_won": False, "player_name": ""  # <-- Added player_name memory!
     })
 
 # =========================================
@@ -220,7 +220,6 @@ with st.sidebar:
         try:
             data = sheet.get_all_records()
             if data:
-                # Sort by Score high to low, show top 5
                 sorted_data = sorted(data, key=lambda x: int(x['Score']), reverse=True)[:5]
                 st.table(sorted_data)
             else:
@@ -230,18 +229,20 @@ with st.sidebar:
     else:
         st.error("Cloud Database Offline") 
    
-    # Change Language Button
     st.divider()
     if st.button("🌍 Change Language"):
         st.session_state.update({
             "language": None, "streak": 0, "lives": 3, 
-            "current_riddle": "", "status_msg": ""
+            "current_riddle": "", "status_msg": "", "player_name": ""
         })
         st.rerun()
 
-# --- LANGUAGE SELECTOR ---
+# =========================================
+# 6. START SCREENS (Language & Name)
+# =========================================
+# --- SCREEN 1: LANGUAGE SELECTOR ---
 if st.session_state.language is None:
-    st.title("🧩 Riddle Master")
+    st.title("🧩 Riddle Guru")
     st.subheader("Choose Language")
     cols = st.columns(3)
     if cols[0].button("🇺🇸 English"): st.session_state.language = "English"; st.rerun()
@@ -249,7 +250,24 @@ if st.session_state.language is None:
     if cols[2].button("🇮🇳 हिन्दी"): st.session_state.language = "Hindi"; st.rerun()
     st.stop()
 
-st.title(f"🧩 Riddle Master ({st.session_state.language})")
+# --- SCREEN 2: ENTER NAME ---
+if not st.session_state.player_name:
+    st.title(f"🧩 Riddle Guru ({st.session_state.language})")
+    st.subheader("Welcome! Who is playing today?")
+    with st.form("name_form"):
+        p_name = st.text_input("Enter your name:")
+        if st.form_submit_button("Start Playing!"):
+            if p_name.strip():
+                st.session_state.player_name = p_name.strip()
+                st.rerun()
+            else:
+                st.warning("Please enter a name!")
+    st.stop() # Stop here until they enter a name!
+
+# =========================================
+# 7. MAIN GAMEPLAY
+# =========================================
+st.title(f"🧩 {st.session_state.player_name}'s Game")
 
 # --- SCOREBOARD ---
 a, b, c = st.columns(3)
@@ -258,9 +276,6 @@ b.metric("🏆 High Score", st.session_state.high_score)
 c.metric("❤️ Lives", st.session_state.lives)
 st.divider()
 
-# =========================================
-# 6. MAIN GAMEPLAY
-# =========================================
 if not st.session_state.current_riddle:
     load_new_riddle()
     st.rerun()
@@ -287,7 +302,7 @@ if not st.session_state.show_next:
                 if st.session_state.streak > st.session_state.high_score:
                     st.session_state.high_score = st.session_state.streak
                 st.session_state.show_next = True
-                st.session_state.just_won = True # <-- Trigger balloons!
+                st.session_state.just_won = True
             else:
                 st.session_state.lives -= 1
                 if st.session_state.lives <= 0:
@@ -301,22 +316,20 @@ if not st.session_state.show_next:
 if st.session_state.status_msg:
     st.write(st.session_state.status_msg)
 
-# --- LAUNCH BALLOONS ---
 if st.session_state.get("just_won", False):
     st.balloons()
-    st.session_state.just_won = False # Turn off so they don't loop forever
+    st.session_state.just_won = False
 
 if st.session_state.show_next:
-    # If Game Over, show Score Submission
+    # Game Over Auto-Save
     if st.session_state.lives <= 0:
-        st.subheader("📢 Save to Leaderboard")
-        p_name = st.text_input("Your Name", key="player_name")
-        if st.button("Submit High Score"):
-            if p_name and sheet:
-                sheet.append_row([p_name, st.session_state.streak])
+        st.subheader("📢 Game Over!")
+        if st.button("Save Score & Play Again"):
+            if sheet:
+                sheet.append_row([st.session_state.player_name, st.session_state.streak])
                 st.success("Score Saved! Check the sidebar! 🔥")
-                st.session_state.update({"streak": 0, "lives": 3, "current_riddle": ""})
-                st.rerun()
+            st.session_state.update({"streak": 0, "lives": 3, "current_riddle": ""})
+            st.rerun()
     else:
         if st.button("➡️ Next Riddle"):
             st.session_state.current_riddle = ""
