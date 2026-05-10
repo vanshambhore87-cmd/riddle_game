@@ -1,6 +1,7 @@
 import streamlit as st
 import random
 import gspread
+import time
 from google.oauth2.service_account import Credentials
 
 # =========================================
@@ -195,7 +196,7 @@ if "language" not in st.session_state:
     st.session_state.update({
         "language": None, "streak": 0, "high_score": 0, "current_riddle": "",
         "real_answer": "", "lives": 3, "hint": "", "show_next": False, "status_msg": "",
-        "just_won": False, "player_name": ""  # <-- Added player_name memory!
+        "just_won": False, "player_name": "", "start_time": 0.0 # <-- Added Timer!
     })
 
 # =========================================
@@ -206,8 +207,10 @@ def load_new_riddle():
         chosen = random.choice(RIDDLES_DB[st.session_state.language])
         st.session_state.update({
             "current_riddle": chosen["riddle"], "real_answer": chosen["answer"],
-            "hidden_hint": chosen["hint"], "hint": "", "show_next": False, "status_msg": ""
+            "hidden_hint": chosen["hint"], "hint": "", "show_next": False, "status_msg": "",
+            "start_time": time.time() # <-- Start the stopwatch!
         })
+
 
 # =========================================
 # 5. UI & LEADERBOARD SIDEBAR
@@ -267,7 +270,8 @@ if not st.session_state.player_name:
 # =========================================
 # 7. MAIN GAMEPLAY
 # =========================================
-st.title(f"🧩 {st.session_state.player_name}'s Game")
+# Hiding the player name, just showing the generic title!
+st.title(f"🧩 Riddle Guru ({st.session_state.language})")
 
 # --- SCOREBOARD ---
 a, b, c = st.columns(3)
@@ -281,6 +285,7 @@ if not st.session_state.current_riddle:
     st.rerun()
 
 st.info(st.session_state.current_riddle)
+st.caption("⏳ *You have 30 seconds to answer!*") # Little warning for the players
 
 if st.session_state.hint:
     st.warning(f"💡 Hint: {st.session_state.hint}")
@@ -296,20 +301,34 @@ if not st.session_state.show_next:
     with st.form("guess_form"):
         user_ans = st.text_input("Your Answer").strip().lower()
         if st.form_submit_button("Submit"):
-            if user_ans == st.session_state.real_answer.lower():
-                st.session_state.status_msg = "✅ Correct!"
-                st.session_state.streak += 10
-                if st.session_state.streak > st.session_state.high_score:
-                    st.session_state.high_score = st.session_state.streak
-                st.session_state.show_next = True
-                st.session_state.just_won = True
-            else:
+            # CHECK THE TIMER FIRST!
+            elapsed_time = time.time() - st.session_state.start_time
+            
+            if elapsed_time > 30:
                 st.session_state.lives -= 1
                 if st.session_state.lives <= 0:
-                    st.session_state.status_msg = f"💀 Game Over! Answer: {st.session_state.real_answer}"
+                    st.session_state.status_msg = f"💀 Game Over! Time's up (took {int(elapsed_time)}s). Answer was: {st.session_state.real_answer}"
                     st.session_state.show_next = True
                 else:
-                    st.session_state.status_msg = f"❌ Wrong! {st.session_state.lives} lives left."
+                    st.session_state.status_msg = f"⏰ Time's up! You took {int(elapsed_time)}s. {st.session_state.lives} lives left."
+                    st.session_state.start_time = time.time() # Reset clock for their next guess
+            else:
+                # If they were fast enough, check the answer!
+                if user_ans == st.session_state.real_answer.lower():
+                    st.session_state.status_msg = f"✅ Correct! (Answered in {int(elapsed_time)}s)"
+                    st.session_state.streak += 10
+                    if st.session_state.streak > st.session_state.high_score:
+                        st.session_state.high_score = st.session_state.streak
+                    st.session_state.show_next = True
+                    st.session_state.just_won = True
+                else:
+                    st.session_state.lives -= 1
+                    if st.session_state.lives <= 0:
+                        st.session_state.status_msg = f"💀 Game Over! Answer: {st.session_state.real_answer}"
+                        st.session_state.show_next = True
+                    else:
+                        st.session_state.status_msg = f"❌ Wrong! {st.session_state.lives} lives left."
+                        st.session_state.start_time = time.time() # Reset clock for next guess
             st.rerun()
 
 # --- POST-GAME / NEXT LEVEL ---
@@ -326,6 +345,7 @@ if st.session_state.show_next:
         st.subheader("📢 Game Over!")
         if st.button("Save Score & Play Again"):
             if sheet:
+                # It secretly uses the name they typed at the start!
                 sheet.append_row([st.session_state.player_name, st.session_state.streak])
                 st.success("Score Saved! Check the sidebar! 🔥")
             st.session_state.update({"streak": 0, "lives": 3, "current_riddle": ""})
