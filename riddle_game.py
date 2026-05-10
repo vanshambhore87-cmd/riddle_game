@@ -297,6 +297,10 @@ if not st.session_state.show_next:
             st.session_state.hint = st.session_state.hidden_hint
             st.session_state.streak -= 2
             st.rerun()
+        else:
+            # THIS IS NEW: Tells the player WHY it didn't work!
+            st.error("🚫 Not enough points! You need a Streak of at least 2.")
+
     
     with st.form("guess_form"):
         user_ans = st.text_input("Your Answer").strip().lower()
