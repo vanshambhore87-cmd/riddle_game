@@ -20,7 +20,7 @@ def get_leaderboard_sheet():
 # =========================================
 # 2. APP CONFIG & DATA
 # =========================================
-st.set_page_config(page_title="Riddle Star", page_icon="🧩", layout="centered")
+st.set_page_config(page_title="Riddle App", page_icon="🧩", layout="centered")
 
 
 
@@ -255,7 +255,7 @@ if st.session_state.language is None:
 
 # --- SCREEN 2: ENTER NAME ---
 if not st.session_state.player_name:
-    st.title(f"🧩 Riddle Guru ({st.session_state.language})")
+    st.title(f"🧩 Riddle World ({st.session_state.language})")
     st.subheader("Welcome! Who is playing today?")
     with st.form("name_form"):
         p_name = st.text_input("Enter your name:")
