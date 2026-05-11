@@ -245,7 +245,7 @@ with st.sidebar:
 # =========================================
 # --- SCREEN 1: LANGUAGE SELECTOR ---
 if st.session_state.language is None:
-    st.title("🧩 Riddle Guru")
+    st.title("🧩 Riddle World")
     st.subheader("Choose Language")
     cols = st.columns(3)
     if cols[0].button("🇺🇸 English"): st.session_state.language = "English"; st.rerun()
@@ -271,7 +271,7 @@ if not st.session_state.player_name:
 # 7. MAIN GAMEPLAY
 # =========================================
 # Hiding the player name, just showing the generic title!
-st.title(f"🧩 Riddle Guru ({st.session_state.language})")
+st.title(f"🧩 Riddle World ({st.session_state.language})")
 
 # --- SCOREBOARD ---
 a, b, c = st.columns(3)
