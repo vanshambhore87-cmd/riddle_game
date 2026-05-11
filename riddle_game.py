@@ -20,7 +20,7 @@ def get_leaderboard_sheet():
 # =========================================
 # 2. APP CONFIG & DATA
 # =========================================
-st.set_page_config(page_title="Riddle App", page_icon="🧩", layout="centered")
+st.set_page_config(page_title="Riddle Star", page_icon="🧩", layout="centered")
 
 
 
